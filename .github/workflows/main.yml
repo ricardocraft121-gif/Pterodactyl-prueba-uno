@@ -1,19 +1,21 @@
-# .github/workflows/pterodactyl-compose-final.yml
-name: Pterodactyl Estable (con Docker Compose)
+# .github/workflows/pterodactyl-final-funcional.yml
+name: Pterodactyl Definitivo y Funcional
 
 on:
+  # Permite iniciar el workflow manualmente
   workflow_dispatch:
 
 jobs:
-  iniciar-panel-compose:
+  iniciar-panel-pterodactyl:
     runs-on: ubuntu-latest
     steps:
       - name: 1. Crear el archivo de configuración .env
         run: |
+          # Creamos el .env sin la APP_KEY, porque se generará después
           cat <<EOF > .env
           APP_ENV=production
           APP_DEBUG=false
-          APP_URL=http://127.0.0.1
+          APP_URL=http://localhost
           APP_TIMEZONE=UTC
           APP_SERVICE_AUTHOR=support@example.com
           DB_HOST=database
@@ -29,7 +31,7 @@ jobs:
           MAIL_DRIVER=log
           EOF
 
-      - name: 2. Crear el archivo docker-compose.yml (CON LA URL CORRECTA)
+      - name: 2. Crear el archivo docker-compose.yml
         run: |
           cat <<EOF > docker-compose.yml
           version: '3.8'
@@ -80,13 +82,21 @@ jobs:
         run: |
           echo "Levantando los contenedores de Pterodactyl..."
           docker-compose up -d
-          echo "Los servicios están arrancando. Esperando 60 segundos para que la base de datos esté lista..."
+          echo "Los servicios están arrancando. Esperando 60 segundos para que todo esté listo..."
           sleep 60
 
-      - name: 5. Ejecutar la configuración final del Panel
+      - name: 5. Ejecutar la configuración final del Panel (CORREGIDO)
         run: |
-          echo "Configurando la base de datos y creando el usuario..."
+          echo "Generando la clave de encriptación de la aplicación (APP_KEY)..."
+          # PASO 1: Generar la clave. Este era el paso que faltaba.
+          docker-compose exec -T panel php artisan key:generate --force
+
+          echo "Configurando la base de datos..."
+          # PASO 2: Migrar la base de datos.
           docker-compose exec -T panel php artisan migrate --seed --force
+          
+          echo "Creando el usuario administrador..."
+          # PASO 3: Crear el usuario.
           docker-compose exec -T panel php artisan p:user:make --admin=1 --username=admin --email=admin@example.com --password='P4ssw0rd.123' --no-interaction
 
       - name: 6. Descargar e instalar Cloudflared
@@ -98,7 +108,7 @@ jobs:
       - name: 7. Crear túnel público para acceder al panel
         run: |
           echo "--------------------------------------------------------"
-          echo "¡Instalación con Docker Compose completada!"
+          echo "¡Instalación completada! El panel está listo."
           echo "Creando el túnel público. La URL aparecerá a continuación."
           echo "Credenciales de acceso:"
           echo "Usuario: admin"
