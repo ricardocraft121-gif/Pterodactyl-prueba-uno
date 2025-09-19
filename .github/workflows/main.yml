@@ -11,36 +11,27 @@ jobs:
     steps:
       - name: 1. Crear el archivo de configuración .env
         run: |
-          # Este archivo contiene todas las variables de entorno para Pterodactyl
           cat <<EOF > .env
           APP_ENV=production
           APP_DEBUG=false
           APP_URL=http://127.0.0.1
           APP_TIMEZONE=UTC
           APP_SERVICE_AUTHOR=support@example.com
-
-          # Database Settings
           DB_HOST=database
           DB_PORT=3306
           DB_DATABASE=panel
           DB_USERNAME=pterodactyl
           DB_PASSWORD=supersecretpassword
-
-          # Cache/Session Settings
           CACHE_DRIVER=redis
           SESSION_DRIVER=redis
           QUEUE_DRIVER=redis
           REDIS_HOST=cache
           REDIS_PORT=6379
-
-          # Mail Settings (usamos log para que no intente enviar emails)
           MAIL_DRIVER=log
           EOF
 
       - name: 2. Crear el archivo docker-compose.yml
         run: |
-          # Este archivo define todos los servicios necesarios
-          # Basado en configuraciones recomendadas por la comunidad
           cat <<EOF > docker-compose.yml
           version: '3.8'
           services:
@@ -81,29 +72,33 @@ jobs:
               driver: bridge
           EOF
 
-      - name: 3. Iniciar todos los servicios con Docker Compose
+      # --- PASO AÑADIDO PARA SOLUCIONAR EL ERROR ---
+      - name: 3. Instalar Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: 4. Iniciar todos los servicios con Docker Compose
         run: |
           echo "Levantando los contenedores de Pterodactyl..."
           docker-compose up -d
           echo "Los servicios están arrancando. Esperando 60 segundos para que la base de datos esté lista..."
           sleep 60
 
-      - name: 4. Ejecutar la configuración final del Panel
+      - name: 5. Ejecutar la configuración final del Panel
         run: |
           echo "Configurando la base de datos y creando el usuario..."
-          # Ejecutamos los comandos dentro del contenedor 'panel'
-          # -T deshabilita la terminal, necesario para scripts
           docker-compose exec -T panel php artisan migrate --seed --force
           docker-compose exec -T panel php artisan p:user:make --admin=1 --username=admin --email=admin@example.com --password='P4ssw0rd.123' --no-interaction
 
-      - name: 5. Descargar e instalar Cloudflared
+      - name: 6. Descargar e instalar Cloudflared
         run: |
           echo "Descargando Cloudflared..."
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
           sudo mv cloudflared /usr/local/bin/
 
-      - name: 6. Crear túnel público para acceder al panel
+      - name: 7. Crear túnel público para acceder al panel
         run: |
           echo "--------------------------------------------------------"
           echo "¡Instalación con Docker Compose completada!"
