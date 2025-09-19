@@ -12,9 +12,8 @@ jobs:
       - name: 1. Instalar Pterodactyl usando Docker
         run: |
           echo "Iniciando instalación de Pterodactyl con Docker. Esto será mucho más rápido."
-          # Ejecutamos el mismo script de antes, pero añadiendo la opción --docker
-          # Esto descargará las imágenes de Docker pre-construidas en lugar de instalar todo desde cero.
-          bash <(curl -s https://pterodactyl-installer.se) --docker --no-daemon --no-database-password --email admin@example.com --user admin --password 'P4ssw0rd.123' --fqdn 127.0.0.1
+          # AÑADIMOS SUDO AQUI para darle permisos de administrador al script de instalación
+          sudo bash <(curl -s https://pterodactyl-installer.se) --docker --no-daemon --no-database-password --email admin@example.com --user admin --password 'P4ssw0rd.123' --fqdn 127.0.0.1
       
       - name: 2. Descargar e instalar Cloudflared (para el túnel)
         run: |
