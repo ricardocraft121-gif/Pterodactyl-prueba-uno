@@ -2,7 +2,6 @@
 name: Pterodactyl Estable (con Docker Compose)
 
 on:
-  # Permite iniciar el workflow manualmente
   workflow_dispatch:
 
 jobs:
@@ -30,7 +29,7 @@ jobs:
           MAIL_DRIVER=log
           EOF
 
-      - name: 2. Crear el archivo docker-compose.yml
+      - name: 2. Crear el archivo docker-compose.yml (CON LA URL CORRECTA)
         run: |
           cat <<EOF > docker-compose.yml
           version: '3.8'
@@ -54,7 +53,7 @@ jobs:
               networks:
                 - pteronet
             panel:
-              image: pterodactyl/panel:latest
+              image: ghcr.io/pterodactyl/panel:latest
               restart: always
               ports:
                 - "80:80"
@@ -72,7 +71,6 @@ jobs:
               driver: bridge
           EOF
 
-      # --- PASO AÑADIDO PARA SOLUCIONAR EL ERROR ---
       - name: 3. Instalar Docker Compose
         run: |
           sudo apt-get update
@@ -93,7 +91,6 @@ jobs:
 
       - name: 6. Descargar e instalar Cloudflared
         run: |
-          echo "Descargando Cloudflared..."
           wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
           sudo mv cloudflared /usr/local/bin/
