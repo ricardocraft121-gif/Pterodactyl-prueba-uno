@@ -1,5 +1,5 @@
-# .github/workflows/pterodactyl-final-funcional.yml
-name: Pterodactyl Definitivo y Funcional
+# .github/workflows/pterodactyl-funcional-final.yml
+name: Pterodactyl Funcional (Solución Definitiva)
 
 on:
   # Permite iniciar el workflow manualmente
@@ -9,12 +9,13 @@ jobs:
   iniciar-panel-pterodactyl:
     runs-on: ubuntu-latest
     steps:
-      - name: 1. Crear el archivo de configuración .env
+      - name: 1. Crear el archivo de configuración .env (CON APP_KEY)
         run: |
-          # Creamos el .env sin la APP_KEY, porque se generará después
+          # AÑADIMOS LA CLAVE DIRECTAMENTE PARA EVITAR ERRORES DE GENERACIÓN
           cat <<EOF > .env
           APP_ENV=production
           APP_DEBUG=false
+          APP_KEY=base64:UNAEbQ83I2n3fO0z1TqJz3JtV7sAzfGq8gU6b8gL2Fw=
           APP_URL=http://localhost
           APP_TIMEZONE=UTC
           APP_SERVICE_AUTHOR=support@example.com
@@ -82,21 +83,16 @@ jobs:
         run: |
           echo "Levantando los contenedores de Pterodactyl..."
           docker-compose up -d
-          echo "Los servicios están arrancando. Esperando 60 segundos para que todo esté listo..."
+          echo "Los servicios están arrancando. Esperando 60 segundos para que todo se estabilice..."
           sleep 60
 
-      - name: 5. Ejecutar la configuración final del Panel (CORREGIDO)
+      - name: 5. Ejecutar la configuración final del Panel
         run: |
-          echo "Generando la clave de encriptación de la aplicación (APP_KEY)..."
-          # PASO 1: Generar la clave. Este era el paso que faltaba.
-          docker-compose exec -T panel php artisan key:generate --force
-
           echo "Configurando la base de datos..."
-          # PASO 2: Migrar la base de datos.
+          # Ahora funcionará porque la APP_KEY ya existe
           docker-compose exec -T panel php artisan migrate --seed --force
           
           echo "Creando el usuario administrador..."
-          # PASO 3: Crear el usuario.
           docker-compose exec -T panel php artisan p:user:make --admin=1 --username=admin --email=admin@example.com --password='P4ssw0rd.123' --no-interaction
 
       - name: 6. Descargar e instalar Cloudflared
