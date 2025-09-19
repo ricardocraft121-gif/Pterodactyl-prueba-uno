@@ -1,0 +1,39 @@
+# .github/workflows/pterodactyl-docker-rapido.yml
+name: Pterodactyl Rápido (con Docker)
+
+on:
+  # Permite iniciar el workflow manualmente
+  workflow_dispatch:
+
+jobs:
+  iniciar-con-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Instalar Pterodactyl usando Docker
+        run: |
+          echo "Iniciando instalación de Pterodactyl con Docker. Esto será mucho más rápido."
+          # Ejecutamos el mismo script de antes, pero añadiendo la opción --docker
+          # Esto descargará las imágenes de Docker pre-construidas en lugar de instalar todo desde cero.
+          bash <(curl -s https://pterodactyl-installer.se) --docker --no-daemon --no-database-password --email admin@example.com --user admin --password 'P4ssw0rd.123' --fqdn 127.0.0.1
+      
+      - name: 2. Descargar e instalar Cloudflared (para el túnel)
+        run: |
+          echo "Descargando Cloudflared..."
+          wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          mv cloudflared-linux-amd64 cloudflared
+          chmod +x cloudflared
+          sudo mv cloudflared /usr/local/bin/
+          echo "Cloudflared instalado."
+
+      - name: 3. Crear túnel público para acceder al panel
+        run: |
+          echo "--------------------------------------------------------"
+          echo "¡Instalación con Docker completada!"
+          echo "Creando el túnel público. La URL aparecerá a continuación."
+          echo "Credenciales de acceso:"
+          echo "Usuario: admin"
+          echo "Contraseña: P4ssw0rd.123"
+          echo "--------------------------------------------------------"
+          
+          # El script de Docker expone el panel en el puerto 80 por defecto.
+          cloudflared tunnel --url http://localhost:80
